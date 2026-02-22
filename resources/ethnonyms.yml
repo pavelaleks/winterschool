@@ -1,0 +1,228 @@
+# Этнонимы и исторические варианты написания для травелогов о Сибири
+# Каждая группа — каноническое имя + варианты для regex
+
+kalmuk:
+  - kalmuk
+  - kalmucks
+  - kalmuk's
+  - calmuck
+  - calmucks
+  - calmuck's
+  - kalmak
+  - kalmaks
+
+yakut:
+  - yakut
+  - yakuts
+  - yakut's
+  - jakut
+  - jakuts
+  - yacoot
+  - yacoots
+
+buriat:
+  - buriat
+  - Bouriat
+  - Bouriats
+  - buriats
+  - buriat's
+  - buryat
+  - buryats
+  - buriat
+  - buriats
+
+tungus:
+  - tungus
+  - tunguses
+  - tungus's
+  - tunguz
+  - tunguzes
+  - tongus
+  - tonguses
+
+ostyak:
+  - ostyak
+  - ostyaks
+  - ostyak's
+  - ostiac
+  - ostiacs
+  - ostiak
+  - ostiaks
+
+samoyed:
+  - samoyed
+  - samoyeds
+  - samoyed's
+  - samoed
+  - samoeds
+  - samojed
+  - samojeds
+
+kirghiz:
+  - kirghiz
+  - kirgiz
+  - kirghiz
+  - kyrgyz
+  - kirgis
+  - kirghis
+  - kyrgys
+  - kyrghys
+  - kirghizes
+  - kazakh
+  - kazakhs
+
+bashkir:
+  - bashkir
+  - bashkirs
+  - bashkir's
+  - baschkir
+  - baschkirs
+  - baskir
+  - baskirs
+
+altain:
+  - altais
+  - altaians
+    altai tatar
+  - altai tatars
+
+khakas:
+  - khakas
+  - khakass
+  - kachin
+  - kachins
+  - abakan tatar
+  - abakan tatars
+  - minusinsk tatar
+  - minusinsk tatars
+
+shor:
+  - shor
+  - shors
+  - shorian
+  - shorians
+  - kuznet tatar
+  - kuznet tatars
+
+tuva:
+  - tuvan
+  - tuvans
+  - soyot
+  - soyots
+  - uriankhai
+  - uriankhais
+  - uryankhai
+  - uryankhais
+
+dolgan:
+  - dolgan
+  - dolgans
+  - dolghan
+  - dolghans
+
+nenets:
+  - nenets
+  - nenetses
+  - jurak
+  - juraks
+
+selkup:
+  - selkup
+  - selkups
+  - ostyak samoyed
+  - ostyak samoyeds
+
+nganasan:
+  - nganasan
+  - nganasans
+  - tavgi
+  - tavgis
+
+mansi:
+  - mansi
+  - mansis
+  - vogul
+  - voguls
+
+yukaghir:
+  - yukaghir
+  - yukaghirs
+  - yukagir
+  - yukagirs
+
+koryak:
+  - koryak
+  - koryaks
+  - koriak
+  - koriaks
+
+chukchi:
+  - chukchi
+  - chukchis
+  - chukchee
+  - chukchees
+  - tchuktchi
+
+itelmen:
+  - itelmen
+  - itelmens
+  - kamchadal
+  - kamchadals
+
+ket:
+  - ket
+  - kets
+  - yenisei ostyak
+  - yenisei ostyaks
+
+mongol:
+  - mongol
+  - mongols
+  - mongol's
+  - mogul
+  - moguls
+  - mogol
+  - mogols
+  - tartar mongol
+  - tartar mongols
+
+chinese:
+  - chinese
+  - chinaman
+  - chinamen
+  - celestials
+  - cathayan
+  - cathayans
+  - kitai
+  - kitais
+
+japanese:
+  - japanese
+  - japonese
+  - japonese
+  - nipponese
+  - nipponese people
+  - yamato
+
+russian:
+  - russian
+  - russians
+  - russian's
+  - russ
+  - russes
+  - russin
+  - russins
+  - russnian
+  - russnians
+  - great russian
+  - great russians
+  - little russian
+  - little russians
+  - white russian
+  - white russians
+  - muscovite
+  - muscovites
+  - moscovite
+  - moscovites
+  - roosian
+  - roosians

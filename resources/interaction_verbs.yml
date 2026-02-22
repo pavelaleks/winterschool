@@ -1,0 +1,60 @@
+# Группы глаголов взаимодействия для направленной сети (subject -> verb -> object)
+# Ключ — тип взаимодействия, значение — леммы/формы глаголов
+
+fight:
+  - fight
+  - fighting
+  - fought
+  - attack
+  - attacked
+  - raid
+  - raided
+  - kill
+  - killed
+  - kill
+  - defeat
+  - defeated
+
+trade:
+  - trade
+  - trading
+  - traded
+  - exchange
+  - exchanged
+  - sell
+  - sold
+  - buy
+  - bought
+  - barter
+  - bartered
+
+submit_rule:
+  - submit
+  - submitted
+  - rule
+  - ruled
+  - govern
+  - governed
+  - tax
+  - taxed
+  - command
+
+convert:
+  - convert
+  - converted
+  - baptize
+  - baptized
+  - baptise
+  - baptised
+
+ally_help:
+  - ally
+  - allied
+  - help
+  - helped
+  - assist
+  - assisted
+  - protect
+  - protected
+  - negotiate
+  - negotiated

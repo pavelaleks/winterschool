@@ -1,0 +1,89 @@
+# Лексикон для классификации типа репрезентации (R в PIRO)
+# negative / exotic / positive / neutral
+
+negative:
+  - savage
+  - barbarous
+  - barbaric
+  - cruel
+  - treacherous
+  - lazy
+  - dirty
+  - filthy
+  - ignorant
+  - stupid
+  - cunning
+  - thievish
+  - cowardly
+  - brutal
+  - wild
+  - uncivilized
+  - backward
+  - inferior
+  - degraded
+  - wretched
+  - miserable
+  - hostile
+  - fierce
+  - violent
+  - primitive
+  - brutish
+  - superstitious
+  - heathen
+  - pagan
+
+exotic:
+  - strange
+  - curious
+  - peculiar
+  - picturesque
+  - oriental
+  - exotic
+  - quaint
+  - unusual
+  - remarkable
+  - singular
+  - odd
+  - fantastic
+  - mysterious
+  - romantic
+  - colourful
+  - colorful
+  - striking
+  - striking
+  - wild
+  - primitive
+
+positive:
+  - noble
+  - brave
+  - honest
+  - hospitable
+  - friendly
+  - kind
+  - intelligent
+  - industrious
+  - faithful
+  - loyal
+  - dignified
+  - dignified
+  - hardy
+  - skillful
+  - skilful
+  - capable
+  - gentle
+  - peaceful
+  - civilised
+  - civilized
+
+neutral:
+  - native
+  - local
+  - indigenous
+  - tribal
+  - nomadic
+  - settled
+  - northern
+  - siberian
+  - mongol
+  - asian

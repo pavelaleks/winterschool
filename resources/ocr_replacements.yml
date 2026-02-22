@@ -1,0 +1,63 @@
+# Замены для очистки типичных OCR-ошибок (целое слово).
+# Формат: ошибочное написание: правильное написание
+# Замена применяется по границам слов, без учёта регистра (результат — с сохранением регистра первой буквы).
+
+# Общие частые ошибки OCR
+tlie: the
+tke: the
+rhe: the
+wlth: with
+vith: with
+witli: with
+aud: and
+aad: and
+tlieir: their
+froiu: from
+weie: were
+liave: have
+saicl: said
+tliat: that
+tliis: this
+tliey: they
+peopie: people
+somc: some
+inore: more
+wlien: when
+wliat: what
+abont: about
+conld: could
+wouid: would
+otlier: other
+tliere: there
+throngh: through
+thonght: thought
+charactcr: character
+savagc: savage
+primitivc: primitive
+picturcsque: picturesque
+
+# Искажённые этнонимы (OCR)
+yaknts: yakuts
+yalcuts: yakuts
+yaktits: yakuts
+iakuts: yakuts
+tungns: tungus
+tungnses: tunguses
+
+# Слова из лексикона репрезентации / ситуаций
+hospltable: hospitable
+intelligent: intelligent
+industrious: industrious
+barbarous: barbarous
+barbaric: barbaric
+governor: governor
+temple: temple
+caravan: caravan
+tribute: tribute
+authority: authority
+expedition: expedition
+journey: journey
+siberia: siberia
+siberian: siberian
+russian: russian
+russians: russians
