@@ -508,6 +508,27 @@ def build_report(
     )
     report_data["timestamp"] = datetime.now().isoformat()
     report_data["run_passport"] = run_passport or {}
+
+    # Scatter OI vs AS, ED vs EPS: matplotlib с adjustText, jitter, квадранты, SVG/PNG
+    if derived_indices:
+        try:
+            from reports.scatter_plots import build_indices_scatter_plots
+            scatter_paths = build_indices_scatter_plots(derived_indices, output_path.parent)
+            report_data["scatter_oi_as_svg"] = scatter_paths.get("oi_vs_as_svg")
+            report_data["scatter_oi_as_png"] = scatter_paths.get("oi_vs_as_png")
+            report_data["scatter_ed_eps_svg"] = scatter_paths.get("ed_vs_eps_svg")
+            report_data["scatter_ed_eps_png"] = scatter_paths.get("ed_vs_eps_png")
+        except Exception:
+            report_data["scatter_oi_as_svg"] = None
+            report_data["scatter_oi_as_png"] = None
+            report_data["scatter_ed_eps_svg"] = None
+            report_data["scatter_ed_eps_png"] = None
+    else:
+        report_data["scatter_oi_as_svg"] = None
+        report_data["scatter_oi_as_png"] = None
+        report_data["scatter_ed_eps_svg"] = None
+        report_data["scatter_ed_eps_png"] = None
+
     exec_bullets = _executive_summary_bullets(report_data)
     section_analytics = _section_analytics(report_data)
     analytics_corpus = _h(section_analytics.get("corpus", ""))
@@ -1165,21 +1186,35 @@ function renderIndices() {{
   var oiSorted = ethnosList.map(function(eth) {{ return {{ ethnos: eth, val: rawOI[eth] != null ? rawOI[eth] : 0 }}; }}).sort(function(a,b) {{ return b.val - a.val; }});
   var traceBar = {{ x: oiSorted.map(function(x) {{ return x.ethnos; }}), y: oiSorted.map(function(x) {{ return x.val; }}), type: 'bar', name: 'OI' }};
   Plotly.newPlot(document.getElementById('plot-oi-ranking'), [traceBar], {{ title: 'Ранжирование по Orientalization Index (raw_OI)', xaxis: {{ title: 'Этнос' }}, yaxis: {{ title: 'OI' }}, margin: {{ b: 120 }} }}, {{ responsive: true }});
-  var oiAsX = [], oiAsY = [], oiAsLabels = [];
-  ethnosList.forEach(function(eth) {{
-    if (rawOI[eth] != null && as_[eth] != null) {{ oiAsX.push(rawOI[eth]); oiAsY.push(as_[eth]); oiAsLabels.push(eth); }}
-  }});
-  if (oiAsX.length) {{
-    var traceScatter1 = {{ x: oiAsX, y: oiAsY, mode: 'markers+text', type: 'scatter', text: oiAsLabels, textposition: 'top center', marker: {{ size: 10 }} }};
-    Plotly.newPlot(document.getElementById('plot-scatter-oi-as'), [traceScatter1], {{ title: 'OI vs Agency Score', margin: {{ l: 70, r: 70, t: 50, b: 50 }}, xaxis: {{ title: 'OI', automargin: true }}, yaxis: {{ title: 'AS', automargin: true }} }}, {{ responsive: true }});
+  var wrapOiAs = document.getElementById('plot-scatter-oi-as');
+  var wrapEdEps = document.getElementById('plot-scatter-ed-eps');
+  if (reportData.scatter_oi_as_svg && wrapOiAs) {{
+    wrapOiAs.innerHTML = '<img src="' + reportData.scatter_oi_as_svg + '" alt="OI vs Agency Score" style="max-width:100%; height:auto;">' +
+      '<p class="method-note">Экспорт: <a href="' + (reportData.scatter_oi_as_svg || '') + '">SVG</a>' +
+      (reportData.scatter_oi_as_png ? ' · <a href="' + reportData.scatter_oi_as_png + '">PNG</a>' : '') + '</p>';
+  }} else {{
+    var oiAsX = [], oiAsY = [], oiAsLabels = [];
+    ethnosList.forEach(function(eth) {{
+      if (rawOI[eth] != null && as_[eth] != null) {{ oiAsX.push(rawOI[eth]); oiAsY.push(as_[eth]); oiAsLabels.push(eth); }}
+    }});
+    if (oiAsX.length && wrapOiAs) {{
+      var traceScatter1 = {{ x: oiAsX, y: oiAsY, mode: 'markers+text', type: 'scatter', text: oiAsLabels, textposition: 'top center', marker: {{ size: 10 }} }};
+      Plotly.newPlot(wrapOiAs, [traceScatter1], {{ title: 'OI vs Agency Score', margin: {{ l: 70, r: 70, t: 50, b: 50 }}, xaxis: {{ title: 'OI', automargin: true }}, yaxis: {{ title: 'AS', automargin: true }} }}, {{ responsive: true }});
+    }}
   }}
-  var edEpsX = [], edEpsY = [], edEpsLabels = [];
-  ethnosList.forEach(function(eth) {{
-    if (ed[eth] != null && eps[eth] != null) {{ edEpsX.push(ed[eth]); edEpsY.push(eps[eth]); edEpsLabels.push(eth); }}
-  }});
-  if (edEpsX.length) {{
-    var traceScatter2 = {{ x: edEpsX, y: edEpsY, mode: 'markers+text', type: 'scatter', text: edEpsLabels, textposition: 'top center', marker: {{ size: 10 }} }};
-    Plotly.newPlot(document.getElementById('plot-scatter-ed-eps'), [traceScatter2], {{ title: 'ED vs EPS', margin: {{ l: 70, r: 70, t: 50, b: 50 }}, xaxis: {{ title: 'ED', automargin: true }}, yaxis: {{ title: 'EPS', automargin: true }} }}, {{ responsive: true }});
+  if (reportData.scatter_ed_eps_svg && wrapEdEps) {{
+    wrapEdEps.innerHTML = '<img src="' + reportData.scatter_ed_eps_svg + '" alt="ED vs EPS" style="max-width:100%; height:auto;">' +
+      '<p class="method-note">Экспорт: <a href="' + (reportData.scatter_ed_eps_svg || '') + '">SVG</a>' +
+      (reportData.scatter_ed_eps_png ? ' · <a href="' + reportData.scatter_ed_eps_png + '">PNG</a>' : '') + '</p>';
+  }} else {{
+    var edEpsX = [], edEpsY = [], edEpsLabels = [];
+    ethnosList.forEach(function(eth) {{
+      if (ed[eth] != null && eps[eth] != null) {{ edEpsX.push(ed[eth]); edEpsY.push(eps[eth]); edEpsLabels.push(eth); }}
+    }});
+    if (edEpsX.length && wrapEdEps) {{
+      var traceScatter2 = {{ x: edEpsX, y: edEpsY, mode: 'markers+text', type: 'scatter', text: edEpsLabels, textposition: 'top center', marker: {{ size: 10 }} }};
+      Plotly.newPlot(wrapEdEps, [traceScatter2], {{ title: 'ED vs EPS', margin: {{ l: 70, r: 70, t: 50, b: 50 }}, xaxis: {{ title: 'ED', automargin: true }}, yaxis: {{ title: 'EPS', automargin: true }} }}, {{ responsive: true }});
+    }}
   }}
 }}
 
