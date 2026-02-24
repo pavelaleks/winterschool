@@ -259,11 +259,24 @@ def compute_stats_tests(
         ct_r = pd.crosstab(df["ethnos"], df["R"])
         if ct_r.size > 0:
             from scipy.stats import chi2_contingency
-            chi2, p, dof, _ = chi2_contingency(ct_r)
+            chi2, p, dof, expected = chi2_contingency(ct_r)
             n = ct_r.sum().sum()
             min_dim = min(ct_r.shape) - 1
             cramer = np.sqrt(chi2 / (n * min_dim)) if n and min_dim > 0 else 0.0
-            out["chi2_R"] = {"chi2": float(chi2), "p": float(p), "dof": int(dof), "cramers_v": round(float(cramer), 4)}
+            expected_lt5 = int((expected < 5).sum()) if expected is not None else 0
+            if expected_lt5 > 0:
+                _log(
+                    f"Chi2 R warning: {expected_lt5} cells with expected frequency < 5; results may be unreliable.",
+                    log_path,
+                )
+            out["chi2_R"] = {
+                "chi2": float(chi2),
+                "p": float(p),
+                "dof": int(dof),
+                "cramers_v": round(float(cramer), 4),
+                "expected_lt5_cells": expected_lt5,
+                "is_reliable": expected_lt5 == 0,
+            }
     except Exception as e:
         _log(f"Chi2 R: {e}", log_path)
 
@@ -272,11 +285,24 @@ def compute_stats_tests(
         ct_o = pd.crosstab(df["ethnos"], df["O"])
         if ct_o.size > 0:
             from scipy.stats import chi2_contingency
-            chi2, p, dof, _ = chi2_contingency(ct_o)
+            chi2, p, dof, expected = chi2_contingency(ct_o)
             n = ct_o.sum().sum()
             min_dim = min(ct_o.shape) - 1
             cramer = np.sqrt(chi2 / (n * min_dim)) if n and min_dim > 0 else 0.0
-            out["chi2_O"] = {"chi2": float(chi2), "p": float(p), "dof": int(dof), "cramers_v": round(float(cramer), 4)}
+            expected_lt5 = int((expected < 5).sum()) if expected is not None else 0
+            if expected_lt5 > 0:
+                _log(
+                    f"Chi2 O warning: {expected_lt5} cells with expected frequency < 5; results may be unreliable.",
+                    log_path,
+                )
+            out["chi2_O"] = {
+                "chi2": float(chi2),
+                "p": float(p),
+                "dof": int(dof),
+                "cramers_v": round(float(cramer), 4),
+                "expected_lt5_cells": expected_lt5,
+                "is_reliable": expected_lt5 == 0,
+            }
     except Exception as e:
         _log(f"Chi2 O: {e}", log_path)
 

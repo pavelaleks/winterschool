@@ -160,36 +160,36 @@ def _run_report_only() -> None:
             pr = pd.read_csv(ethnic_profiles_path, encoding="utf-8")
             if not pr.empty:
                 derived_profiles_records = pr.fillna("").to_dict(orient="records")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   Предупреждение: не удалось прочитать {ethnic_profiles_path.name}: {e}")
     stats_path = OUTPUT_DIR / "derived" / "stats_tests.json"
     if stats_path.exists():
         try:
             derived_stats_tests = json.loads(stats_path.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   Предупреждение: не удалось прочитать {stats_path.name}: {e}")
     corr_path = OUTPUT_DIR / "derived" / "correlations.csv"
     if corr_path.exists():
         try:
             derived_correlations_records = pd.read_csv(corr_path, encoding="utf-8").to_dict(orient="records")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   Предупреждение: не удалось прочитать {corr_path.name}: {e}")
     clusters_path = OUTPUT_DIR / "derived" / "ethnos_clusters.csv"
     if clusters_path.exists():
         try:
             derived_clusters_records = pd.read_csv(clusters_path, encoding="utf-8").to_dict(orient="records")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   Предупреждение: не удалось прочитать {clusters_path.name}: {e}")
     if not derived_indices and (OUTPUT_DIR / "derived" / "derived_indices.json").exists():
         try:
             derived_indices = json.loads((OUTPUT_DIR / "derived" / "derived_indices.json").read_text(encoding="utf-8"))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   Предупреждение: не удалось прочитать derived/derived_indices.json: {e}")
     if not derived_indices and (OUTPUT_DIR / "derived_indices.json").exists():
         try:
             derived_indices = json.loads((OUTPUT_DIR / "derived_indices.json").read_text(encoding="utf-8"))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   Предупреждение: не удалось прочитать derived_indices.json: {e}")
 
     # Мемо и синтез из output/llm_memos
     report_memos = {}
@@ -212,44 +212,45 @@ def _run_report_only() -> None:
     if path_syn.exists():
         try:
             synthesis_data = json.loads(path_syn.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   Предупреждение: не удалось прочитать synthesis.json: {e}")
     token_usage = None
     if (OUTPUT_DIR / "metadata" / "llm_token_count.json").exists():
         try:
             token_usage = json.loads((OUTPUT_DIR / "metadata" / "llm_token_count.json").read_text(encoding="utf-8"))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   Предупреждение: не удалось прочитать llm_token_count.json: {e}")
 
     try:
         from reports.report_assets import ensure_report_assets
         ensure_report_assets(OUTPUT_DIR)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"   Предупреждение: не удалось подготовить assets отчёта: {e}")
     evidence_df = None
     try:
         from exporters.export_excel import piro_fragments_to_dataframe
         # В отчёте — только очищенные фрагменты (без оглавления/колонтитулов/позиционных повторов)
         evidence_df = piro_fragments_to_dataframe(piro_clean)
-    except Exception:
+    except Exception as e:
         if piro_clean:
             evidence_df = pd.DataFrame(piro_clean)
+        print(f"   Предупреждение: fallback evidence_df из piro_clean (ошибка export helper): {e}")
     run_passport = build_run_passport(corpus, raw_df, clean_df)
     passport_path = OUTPUT_DIR / "metadata" / "run_passport.json"
     if passport_path.exists():
         try:
             saved = json.loads(passport_path.read_text(encoding="utf-8"))
             run_passport["noise_filter"] = saved.get("noise_filter", run_passport.get("noise_filter"))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   Предупреждение: не удалось прочитать run_passport.json: {e}")
 
     from reports.build_report import build_report
     scientific_sections = None
     try:
         from llm.scientific_report import load_scientific_report
         scientific_sections = load_scientific_report(OUTPUT_DIR / "llm_memos" / "scientific_report.json")
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"   Предупреждение: не удалось загрузить scientific_report.json: {e}")
     html_path = build_report(
         corpus=corpus,
         raw_df=raw_df,
@@ -1040,9 +1041,10 @@ def main(
         from exporters.export_excel import piro_fragments_to_dataframe
         # Evidence Pack в отчёте — только piro_clean (без шума: оглавление, колонтитулы, повторы)
         evidence_df = piro_fragments_to_dataframe(piro_clean)
-    except Exception:
+    except Exception as e:
         if piro_clean:
             evidence_df = pd.DataFrame(piro_clean)
+        print(f"   Предупреждение: fallback evidence_df из piro_clean (ошибка export helper): {e}")
     run_passport = build_run_passport(
         corpus, raw_df, clean_df,
         input_documents=documents_filter if documents_filter else [d.get("filename", "") for d in (corpus or [])],
@@ -1061,15 +1063,15 @@ def main(
         else:
             from llm.synthesis import load_synthesis
             synthesis_data = load_synthesis(path_syn)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"   Предупреждение: не удалось загрузить synthesis.json: {e}")
     token_usage = None
     token_count_path = OUTPUT_DIR / "metadata" / "llm_token_count.json"
     if token_count_path.exists():
         try:
             token_usage = json.loads(token_count_path.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"   Предупреждение: не удалось загрузить llm_token_count.json: {e}")
     derived_profiles_records = None
     derived_stats_tests = None
     derived_correlations_records = None
@@ -1086,8 +1088,8 @@ def main(
     try:
         from llm.scientific_report import load_scientific_report
         scientific_sections = load_scientific_report(OUTPUT_DIR / "llm_memos" / "scientific_report.json")
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"   Предупреждение: не удалось загрузить scientific_report.json: {e}")
     html_path = build_report(
         corpus=corpus,
         raw_df=raw_df,

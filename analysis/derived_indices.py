@@ -61,6 +61,7 @@ def compute_oi(
         ci[eth] = {"low": round(float(np.percentile(vals, 2.5)), 4), "high": round(float(np.percentile(vals, 97.5)), 4)}
 
     normalized_oi = {}
+    normalized_oi_method = "same_as_raw"
     if norm_rates_per_ethnos:
         for eth, norm in norm_rates_per_ethnos.items():
             # Нормированный OI: доля negative+exotic в нормированных частотах (относительно суммы всех R по этносу)
@@ -70,6 +71,7 @@ def compute_oi(
     return {
         "raw_OI": raw_oi,
         "normalized_OI": normalized_oi or raw_oi,
+        "normalized_OI_method": normalized_oi_method,
         "confidence_interval": ci,
         "by_ethnos_counts": {k: dict(v) for k, v in by_ethnos.items()},
     }

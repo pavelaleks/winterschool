@@ -460,8 +460,8 @@ def build_report(
     try:
         from reports.report_assets import ensure_report_assets
         ensure_report_assets(output_path.parent)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"   Предупреждение: не удалось подготовить assets отчёта: {e}")
 
     memos = llm_memos or {}
     evidence_rows = []
@@ -1330,8 +1330,18 @@ function renderEthnicProfile() {{
   }}
   if (statsWrap) {{
     var stHtml = '';
-    if (tests.chi2_R) stHtml += '<p><strong>Chi-square Ethnos×R:</strong> χ²=' + tests.chi2_R.chi2 + ', p=' + tests.chi2_R.p + ', Cramér\\'s V=' + tests.chi2_R.cramers_v + '</p>';
-    if (tests.chi2_O) stHtml += '<p><strong>Chi-square Ethnos×O:</strong> χ²=' + tests.chi2_O.chi2 + ', p=' + tests.chi2_O.p + ', Cramér\\'s V=' + tests.chi2_O.cramers_v + '</p>';
+    if (tests.chi2_R) {{
+      stHtml += '<p><strong>Chi-square Ethnos×R:</strong> χ²=' + tests.chi2_R.chi2 + ', p=' + tests.chi2_R.p + ', Cramér\\'s V=' + tests.chi2_R.cramers_v + '</p>';
+      if (tests.chi2_R.expected_lt5_cells != null) {{
+        stHtml += '<p class=\"explain\">Надёжность χ² (R): ' + (tests.chi2_R.is_reliable ? 'ok' : 'ограниченная') + '; expected&lt;5 ячеек: ' + tests.chi2_R.expected_lt5_cells + '.</p>';
+      }}
+    }}
+    if (tests.chi2_O) {{
+      stHtml += '<p><strong>Chi-square Ethnos×O:</strong> χ²=' + tests.chi2_O.chi2 + ', p=' + tests.chi2_O.p + ', Cramér\\'s V=' + tests.chi2_O.cramers_v + '</p>';
+      if (tests.chi2_O.expected_lt5_cells != null) {{
+        stHtml += '<p class=\"explain\">Надёжность χ² (O): ' + (tests.chi2_O.is_reliable ? 'ok' : 'ограниченная') + '; expected&lt;5 ячеек: ' + tests.chi2_O.expected_lt5_cells + '.</p>';
+      }}
+    }}
     if (tests.bootstrap_CI && Object.keys(tests.bootstrap_CI).length) stHtml += '<p>Bootstrap 95% CI по топ-этносам (OI, EPS, ED) — см. derived_indices.json / stats_tests.json.</p>';
     statsWrap.innerHTML = stHtml || '<p>Нет данных тестов.</p>';
   }}
