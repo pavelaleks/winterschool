@@ -94,6 +94,7 @@ def build_scientific_report_payload(
     correlations: Optional[List[Dict]] = None,
     report_memos: Optional[Dict[str, Dict]] = None,
     synthesis: Optional[Dict] = None,
+    document_metadata: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Собирает payload для генерации научного отчёта: числа, агрегаты и готовые интерпретации из отчёта (memos, synthesis)."""
     payload = {
@@ -131,6 +132,8 @@ def build_scientific_report_payload(
         payload["correlations"] = correlations[:20]
     else:
         payload["correlations"] = []
+    if document_metadata:
+        payload["document_metadata"] = document_metadata[:60]
 
     prior: Dict[str, Any] = {}
     if report_memos:
@@ -162,6 +165,7 @@ def generate_scientific_report(
     output_html_path: Optional[Path] = None,
     run_passport: Optional[Dict[str, Any]] = None,
     evidence_sample: Optional[List[Dict[str, Any]]] = None,
+    staged: bool = False,
 ) -> Dict[str, str]:
     """
     Генерирует плотный научный отчёт по данным. Сохраняет scientific_report.json и scientific_report.html.
@@ -174,7 +178,9 @@ def generate_scientific_report(
 
     section_keys = ["corpus", "distributions", "keyness", "essentialization", "networks", "indices", "ethnic_profiles", "conclusion"]
 
-    if run_llm:
+    if run_llm and staged:
+        sections = _generate_scientific_report_staged(payload, section_keys)
+    elif run_llm:
         system_prompt = get_system_prompt(use_knowledge=True)
         data_json = json.dumps(payload, ensure_ascii=False, indent=2)
         if "</script>" in data_json:
@@ -196,6 +202,50 @@ def generate_scientific_report(
     html = _build_scientific_report_html(sections, run_passport=run_passport, evidence_sample=evidence_sample)
     output_html_path.write_text(html, encoding="utf-8")
     return sections
+
+
+def _generate_scientific_report_staged(payload: Dict[str, Any], section_keys: List[str]) -> Dict[str, str]:
+    """
+    Поэтапная генерация scientific report:
+    1) corpus + distributions
+    2) keyness + essentialization
+    3) networks + indices
+    4) ethnic_profiles + conclusion
+    """
+    system_prompt = get_system_prompt(use_knowledge=True)
+    data_json = json.dumps(payload, ensure_ascii=False, indent=2)
+    if "</script>" in data_json:
+        data_json = data_json.replace("</script>", "<\\/script>")
+    stages = [
+        ("scientific_report_stage_1", ["corpus", "distributions"]),
+        ("scientific_report_stage_2", ["keyness", "essentialization"]),
+        ("scientific_report_stage_3", ["networks", "indices"]),
+        ("scientific_report_stage_4", ["ethnic_profiles", "conclusion"]),
+    ]
+    out: Dict[str, str] = {}
+    for call_id, keys in stages:
+        stage_prompt = (
+            "Сформируй только следующие секции научного отчёта: "
+            + ", ".join(keys)
+            + ".\n"
+            + "Требования: строго по данным; опора на теоретическую рамку; без выдуманных фактов о корпусе.\n"
+            + "Верни только JSON с ключами: "
+            + ", ".join(keys)
+            + ". Значения — строки (1+ абзацев)."
+        )
+        response = call_deepseek(system_prompt, stage_prompt, data_json, call_id=call_id)
+        parsed = _parse_llm_response(response) or {}
+        for k in keys:
+            v = (parsed.get(k) or "").strip()
+            if v:
+                out[k] = v
+    # Fallback на rule-based только для отсутствующих секций
+    rb = _rule_based_scientific_sections()
+    for k in section_keys:
+        if k not in out or not out[k]:
+            out[k] = rb.get(k, "")
+    out["_source"] = "llm"
+    return out
 
 
 def _rule_based_scientific_sections() -> Dict[str, str]:

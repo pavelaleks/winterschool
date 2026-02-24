@@ -69,6 +69,40 @@ def _is_likely_content_sentence(r: Dict[str, Any]) -> bool:
     return True
 
 
+def _extract_document_metadata(corpus: Optional[List[Dict]]) -> List[Dict[str, Any]]:
+    """
+    Парсит author/year/title из filename в формате Author_Year_Title.txt (best-effort).
+    """
+    import re
+    out: List[Dict[str, Any]] = []
+    for d in (corpus or []):
+        fn = (d.get("filename") or d.get("file_name") or "").strip()
+        if not fn:
+            continue
+        stem = Path(fn).stem
+        parts = stem.split("_")
+        year = None
+        yi = None
+        for i, p in enumerate(parts):
+            if re.fullmatch(r"\d{4}", p):
+                year = int(p)
+                yi = i
+                break
+        if yi is not None:
+            author = " ".join(parts[:yi]).replace("  ", " ").strip(" _-")
+            title = " ".join(parts[yi + 1:]).replace("  ", " ").strip(" _-")
+        else:
+            author = ""
+            title = stem.replace("_", " ").strip()
+        out.append({
+            "filename": fn,
+            "author": author,
+            "year": year,
+            "title": title,
+        })
+    return out
+
+
 def build_run_passport(
     corpus: List[Dict],
     raw_df: pd.DataFrame,
@@ -285,7 +319,7 @@ def _run_report_only() -> None:
     print("Готово.")
 
 
-def _run_scientific_report_only(run_llm: bool = False) -> None:
+def _run_scientific_report_only(run_llm: bool = False, staged: bool = False) -> None:
     """
     Генерирует только научный отчёт (scientific_report.json, scientific_report.html) из уже сохранённых данных.
     Данные берутся из pipeline.db, output/derived/, output/llm_memos/. Без прогона пайплайна.
@@ -375,6 +409,7 @@ def _run_scientific_report_only(run_llm: bool = False) -> None:
         except Exception:
             pass
 
+    doc_meta = _extract_document_metadata(corpus)
     sci_payload = build_scientific_report_payload(
         num_docs=len(corpus) if corpus else 0,
         num_sents=num_sents,
@@ -392,6 +427,7 @@ def _run_scientific_report_only(run_llm: bool = False) -> None:
         correlations=corr_list,
         report_memos=report_memos_for_sci,
         synthesis=synthesis_for_sci,
+        document_metadata=doc_meta,
     )
     run_passport_sci = build_run_passport(corpus, raw_df, clean_df)
     passport_path = OUTPUT_DIR / "metadata" / "run_passport.json"
@@ -420,6 +456,7 @@ def _run_scientific_report_only(run_llm: bool = False) -> None:
         output_html_path=OUTPUT_DIR / "scientific_report.html",
         run_passport=run_passport_sci,
         evidence_sample=evidence_sample_sci,
+        staged=staged,
     )
     print(f"   Сохранено: output/llm_memos/scientific_report.json, output/scientific_report.html")
     if run_llm:
@@ -442,6 +479,7 @@ def main(
     full: bool = False,
     report_only: bool = False,
     scientific_report_only: bool = False,
+    scientific_report_staged: bool = False,
     documents_filter: Optional[List[str]] = None,
     use_lemmas: bool = False,
 ):
@@ -462,7 +500,7 @@ def main(
         return
     # Режим «только научный отчёт»: данные из pipeline.db и файлов, генерация scientific_report.json/html
     if scientific_report_only:
-        _run_scientific_report_only(run_llm=run_llm)
+        _run_scientific_report_only(run_llm=run_llm, staged=scientific_report_staged)
         return
 
     # При выборе документов (--documents) не используем pipeline.db — всегда считаем по подкорпусу
@@ -962,6 +1000,7 @@ def main(
                     synthesis_for_sci = json.loads(path_syn.read_text(encoding="utf-8"))
             except Exception:
                 pass
+            doc_meta = _extract_document_metadata(corpus)
             sci_payload = build_scientific_report_payload(
                 num_docs=len(corpus) if corpus else 0,
                 num_sents=num_sents,
@@ -979,6 +1018,7 @@ def main(
                 correlations=corr_list,
                 report_memos=report_memos_for_sci,
                 synthesis=synthesis_for_sci,
+                document_metadata=doc_meta,
             )
             run_passport_sci = build_run_passport(
                 corpus, raw_df, clean_df,
@@ -1003,6 +1043,7 @@ def main(
                 output_html_path=OUTPUT_DIR / "scientific_report.html",
                 run_passport=run_passport_sci,
                 evidence_sample=evidence_sample_sci,
+                staged=scientific_report_staged,
             )
             print("   Сохранено: output/llm_memos/scientific_report.json, output/scientific_report.html")
         except Exception as ex:
@@ -1188,6 +1229,7 @@ if __name__ == "__main__":
     parser.add_argument("--no-derived", action="store_true", help="Отключить второй слой аналитики (профили, тесты, корреляции, кластеры)")
     parser.add_argument("--report-only", action="store_true", help="Только собрать report.html из pipeline.db и файлов (без прогона пайплайна)")
     parser.add_argument("--scientific-report-only", action="store_true", help="Только научный отчёт: scientific_report.json и scientific_report.html из имеющихся данных (с --run-llm — вызов DeepSeek)")
+    parser.add_argument("--scientific-report-staged", action="store_true", help="Поэтапная генерация scientific report (несколько LLM-вызовов по секциям)")
     parser.add_argument("--report-pdf", action="store_true", help="Дополнительно сгенерировать краткий PDF (по умолчанию только HTML)")
     parser.add_argument("--full", action="store_true", help="Всё по очереди (включая embeddings, deepseek, report-pdf)")
     parser.add_argument(
@@ -1223,6 +1265,7 @@ if __name__ == "__main__":
         full=args.full,
         report_only=getattr(args, "report_only", False),
         scientific_report_only=getattr(args, "scientific_report_only", False),
+        scientific_report_staged=getattr(args, "scientific_report_staged", False),
         documents_filter=documents_filter,
         use_lemmas=getattr(args, "use_lemmas", False),
     )
