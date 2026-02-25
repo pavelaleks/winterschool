@@ -23,7 +23,14 @@ jobs:
           python -m pip install --upgrade pip
           # Smoke-check: ставим только минимальный набор для импорта ключевых модулей.
           # Полный стек (включая optional heavy deps) проверяется отдельным full workflow.
-          pip install "numpy>=1.24.0" "pandas>=2.0.0" "PyYAML>=6.0" "matplotlib>=3.7.0" "scipy>=1.10.0"
+          # Фиксируем версии, совместимые с Python 3.10, чтобы избежать случайных падений
+          # из-за дрейфа latest-версий.
+          pip install \
+            "numpy==1.26.4" \
+            "pandas==2.1.4" \
+            "PyYAML==6.0.2" \
+            "matplotlib==3.8.4" \
+            "scipy==1.11.4"
 
       - name: Compile check
         run: |

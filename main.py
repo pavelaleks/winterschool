@@ -299,6 +299,14 @@ def _run_report_only() -> None:
         essentialization_examples=essentialization_examples,
         interaction_edges=interaction_edges,
         comention_raw=comention_raw,
+        comention_npmi=comention_npmi if "comention_npmi" in locals() else {},
+        robust_interaction_edges=robust_interaction_edges if "robust_interaction_edges" in locals() else [],
+        interaction_node_metrics=interaction_node_metrics if "interaction_node_metrics" in locals() else [],
+        interaction_node_metrics_robust=interaction_node_metrics_robust if "interaction_node_metrics_robust" in locals() else [],
+        interaction_graph_metrics=interaction_graph_metrics if "interaction_graph_metrics" in locals() else {},
+        interaction_graph_metrics_robust=interaction_graph_metrics_robust if "interaction_graph_metrics_robust" in locals() else {},
+        comention_window_sensitivity=comention_window_sensitivity if "comention_window_sensitivity" in locals() else {},
+        interaction_edge_stability=interaction_edge_stability if "interaction_edge_stability" in locals() else [],
         evidence_df=evidence_df,
         cluster_validation=None,
         llm_memos=report_memos,
@@ -634,6 +642,14 @@ def main(
         interaction_matrix = rel_result.get("interaction_matrix", {})
         interaction_edges = rel_result.get("interaction_edges") or []
         comention_raw = rel_result.get("comention_raw") or {}
+        comention_npmi = rel_result.get("comention_npmi") or {}
+        robust_interaction_edges = rel_result.get("robust_interaction_edges") or []
+        interaction_node_metrics = rel_result.get("interaction_node_metrics") or []
+        interaction_node_metrics_robust = rel_result.get("interaction_node_metrics_robust") or []
+        interaction_graph_metrics = rel_result.get("interaction_graph_metrics") or {}
+        interaction_graph_metrics_robust = rel_result.get("interaction_graph_metrics_robust") or {}
+        comention_window_sensitivity = rel_result.get("comention_window_sensitivity") or {}
+        interaction_edge_stability = rel_result.get("interaction_edge_stability") or []
         comention_jaccard = rel_result.get("comention_jaccard") or {}
         image_paths = run_all_visualizations(
             piro_clean,
@@ -682,6 +698,14 @@ def main(
             essentialization_examples=essentialization_examples,
             interaction_edges=interaction_edges,
             comention_raw=comention_raw,
+            comention_npmi=comention_npmi,
+            robust_interaction_edges=robust_interaction_edges,
+            interaction_node_metrics=interaction_node_metrics,
+            interaction_node_metrics_robust=interaction_node_metrics_robust,
+            interaction_graph_metrics=interaction_graph_metrics,
+            interaction_graph_metrics_robust=interaction_graph_metrics_robust,
+            comention_window_sensitivity=comention_window_sensitivity,
+            interaction_edge_stability=interaction_edge_stability,
             derived_indices=derived_indices,
         )
         print("   Кэш пайплайна сохранён: output/pipeline.db")
@@ -697,6 +721,14 @@ def main(
         essentialization_examples = pipeline_data["essentialization_examples"]
         interaction_edges = pipeline_data["interaction_edges"]
         comention_raw = pipeline_data["comention_raw"]
+        comention_npmi = pipeline_data.get("comention_npmi") or {}
+        robust_interaction_edges = pipeline_data.get("robust_interaction_edges") or []
+        interaction_node_metrics = pipeline_data.get("interaction_node_metrics") or []
+        interaction_node_metrics_robust = pipeline_data.get("interaction_node_metrics_robust") or []
+        interaction_graph_metrics = pipeline_data.get("interaction_graph_metrics") or {}
+        interaction_graph_metrics_robust = pipeline_data.get("interaction_graph_metrics_robust") or {}
+        comention_window_sensitivity = pipeline_data.get("comention_window_sensitivity") or {}
+        interaction_edge_stability = pipeline_data.get("interaction_edge_stability") or []
         derived_indices = pipeline_data.get("derived_indices")
         keyness_tables_combined = pipeline_data["keyness_tables"]
         keyness_top = {}
@@ -1145,6 +1177,14 @@ def main(
         essentialization_examples=essentialization_examples,
         interaction_edges=interaction_edges,
         comention_raw=comention_raw,
+        comention_npmi=comention_npmi if "comention_npmi" in locals() else {},
+        robust_interaction_edges=robust_interaction_edges if "robust_interaction_edges" in locals() else [],
+        interaction_node_metrics=interaction_node_metrics if "interaction_node_metrics" in locals() else [],
+        interaction_node_metrics_robust=interaction_node_metrics_robust if "interaction_node_metrics_robust" in locals() else [],
+        interaction_graph_metrics=interaction_graph_metrics if "interaction_graph_metrics" in locals() else {},
+        interaction_graph_metrics_robust=interaction_graph_metrics_robust if "interaction_graph_metrics_robust" in locals() else {},
+        comention_window_sensitivity=comention_window_sensitivity if "comention_window_sensitivity" in locals() else {},
+        interaction_edge_stability=interaction_edge_stability if "interaction_edge_stability" in locals() else [],
         evidence_df=evidence_df,
         cluster_validation=cluster_validation,
         llm_memos=report_memos,

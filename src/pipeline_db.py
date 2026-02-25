@@ -55,6 +55,14 @@ def save_pipeline(
     essentialization_examples: Dict[str, List[Dict]],
     interaction_edges: List[Dict],
     comention_raw: Dict,
+    comention_npmi: Optional[Dict] = None,
+    robust_interaction_edges: Optional[List[Dict]] = None,
+    interaction_node_metrics: Optional[List[Dict]] = None,
+    interaction_node_metrics_robust: Optional[List[Dict]] = None,
+    interaction_graph_metrics: Optional[Dict] = None,
+    interaction_graph_metrics_robust: Optional[Dict] = None,
+    comention_window_sensitivity: Optional[Dict] = None,
+    interaction_edge_stability: Optional[List[Dict]] = None,
     derived_indices: Optional[Dict] = None,
     db_path: Optional[Path] = None,
 ) -> str:
@@ -91,6 +99,22 @@ def save_pipeline(
     _put("essentialization_examples", essentialization_examples)
     _put("interaction_edges", interaction_edges)
     _put("comention_raw", comention_raw)
+    if comention_npmi is not None:
+        _put("comention_npmi", comention_npmi)
+    if robust_interaction_edges is not None:
+        _put("robust_interaction_edges", robust_interaction_edges)
+    if interaction_node_metrics is not None:
+        _put("interaction_node_metrics", interaction_node_metrics)
+    if interaction_node_metrics_robust is not None:
+        _put("interaction_node_metrics_robust", interaction_node_metrics_robust)
+    if interaction_graph_metrics is not None:
+        _put("interaction_graph_metrics", interaction_graph_metrics)
+    if interaction_graph_metrics_robust is not None:
+        _put("interaction_graph_metrics_robust", interaction_graph_metrics_robust)
+    if comention_window_sensitivity is not None:
+        _put("comention_window_sensitivity", comention_window_sensitivity)
+    if interaction_edge_stability is not None:
+        _put("interaction_edge_stability", interaction_edge_stability)
     if derived_indices is not None:
         _put("derived_indices", derived_indices)
 
@@ -159,6 +183,14 @@ def load_pipeline(db_path: Optional[Path] = None) -> Optional[Dict[str, Any]]:
             "essentialization_examples": _get("essentialization_examples") or {},
             "interaction_edges": _get("interaction_edges") or [],
             "comention_raw": _get("comention_raw") or {},
+            "comention_npmi": _get("comention_npmi") or {},
+            "robust_interaction_edges": _get("robust_interaction_edges") or [],
+            "interaction_node_metrics": _get("interaction_node_metrics") or [],
+            "interaction_node_metrics_robust": _get("interaction_node_metrics_robust") or [],
+            "interaction_graph_metrics": _get("interaction_graph_metrics") or {},
+            "interaction_graph_metrics_robust": _get("interaction_graph_metrics_robust") or {},
+            "comention_window_sensitivity": _get("comention_window_sensitivity") or {},
+            "interaction_edge_stability": _get("interaction_edge_stability") or [],
             "derived_indices": _get("derived_indices"),
         }
         return out

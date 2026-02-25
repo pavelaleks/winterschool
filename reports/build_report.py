@@ -148,6 +148,14 @@ def _prepare_report_data(
     essentialization_examples: Dict[str, List[Dict]],
     interaction_edges: List[Dict],
     comention_raw: Dict,
+    comention_npmi: Optional[Dict],
+    robust_interaction_edges: Optional[List[Dict]],
+    interaction_node_metrics: Optional[List[Dict]],
+    interaction_node_metrics_robust: Optional[List[Dict]],
+    interaction_graph_metrics: Optional[Dict],
+    interaction_graph_metrics_robust: Optional[Dict],
+    comention_window_sensitivity: Optional[Dict],
+    interaction_edge_stability: Optional[List[Dict]],
     evidence_rows: List[Dict],
     cluster_validation: Optional[Dict],
     memos: Dict[str, Dict],
@@ -190,6 +198,11 @@ def _prepare_report_data(
         for b, w in targets.items():
             if a != b and w > 0:
                 comention_edges.append({"a": a, "b": b, "weight": w})
+    comention_npmi_edges = []
+    for a, targets in (comention_npmi or {}).items():
+        for b, s in targets.items():
+            if a != b:
+                comention_npmi_edges.append({"a": a, "b": b, "npmi": s})
 
     # Interaction: уже список с examples
     interaction_list = []
@@ -198,6 +211,10 @@ def _prepare_report_data(
         interaction_list.append({
             "src": e.get("src"), "dst": e.get("dst"), "type": e.get("type"),
             "count": e.get("count", 0),
+            "confidence": e.get("confidence", ""),
+            "confidence_high": ((e.get("confidence_counts") or {}).get("high", 0) if isinstance(e.get("confidence_counts"), dict) else 0),
+            "confidence_medium": ((e.get("confidence_counts") or {}).get("medium", 0) if isinstance(e.get("confidence_counts"), dict) else 0),
+            "confidence_low": ((e.get("confidence_counts") or {}).get("low", 0) if isinstance(e.get("confidence_counts"), dict) else 0),
             "example_1": ex[0][:200] if len(ex) > 0 else "",
             "example_2": ex[1][:200] if len(ex) > 1 else "",
             "example_3": ex[2][:200] if len(ex) > 2 else "",
@@ -215,7 +232,15 @@ def _prepare_report_data(
         "keyness_kwic": keyness_kwic,
         "essentialization": {"counts": essentialization_table, "examples": essentialization_examples},
         "interaction_edges": interaction_list,
+        "robust_interaction_edges": robust_interaction_edges or [],
+        "interaction_node_metrics": interaction_node_metrics or [],
+        "interaction_node_metrics_robust": interaction_node_metrics_robust or [],
+        "interaction_graph_metrics": interaction_graph_metrics or {},
+        "interaction_graph_metrics_robust": interaction_graph_metrics_robust or {},
+        "comention_window_sensitivity": comention_window_sensitivity or {},
+        "interaction_edge_stability": interaction_edge_stability or [],
         "comention_edges": comention_edges,
+        "comention_npmi_edges": comention_npmi_edges,
         "evidence": evidence_rows,
         "ethnonym_variants": ethnonym_variants,
         "cluster_validation": (cluster_validation or {}).get("validation", cluster_validation or {}) if isinstance(cluster_validation, dict) else (cluster_validation or {}),
@@ -432,8 +457,16 @@ def build_report(
     essentialization_examples: Dict[str, List[Dict]],
     interaction_edges: List[Dict],
     comention_raw: Dict,
-    evidence_df: Optional[pd.DataFrame],
-    cluster_validation: Optional[Dict],
+    comention_npmi: Optional[Dict] = None,
+    robust_interaction_edges: Optional[List[Dict]] = None,
+    interaction_node_metrics: Optional[List[Dict]] = None,
+    interaction_node_metrics_robust: Optional[List[Dict]] = None,
+    interaction_graph_metrics: Optional[Dict] = None,
+    interaction_graph_metrics_robust: Optional[Dict] = None,
+    comention_window_sensitivity: Optional[Dict] = None,
+    interaction_edge_stability: Optional[List[Dict]] = None,
+    evidence_df: Optional[pd.DataFrame] = None,
+    cluster_validation: Optional[Dict] = None,
     llm_memos: Optional[Dict[str, Dict]] = None,
     derived_indices: Optional[Dict] = None,
     synthesis: Optional[Dict] = None,
@@ -488,6 +521,14 @@ def build_report(
         essentialization_examples=essentialization_examples,
         interaction_edges=interaction_edges,
         comention_raw=comention_raw,
+        comention_npmi=comention_npmi,
+        robust_interaction_edges=robust_interaction_edges,
+        interaction_node_metrics=interaction_node_metrics,
+        interaction_node_metrics_robust=interaction_node_metrics_robust,
+        interaction_graph_metrics=interaction_graph_metrics,
+        interaction_graph_metrics_robust=interaction_graph_metrics_robust,
+        comention_window_sensitivity=comention_window_sensitivity,
+        interaction_edge_stability=interaction_edge_stability,
         evidence_rows=evidence_rows,
         cluster_validation=cluster_validation,
         memos=memos,
@@ -1125,16 +1166,78 @@ function renderEssentialization() {{
 
 function renderNetworks() {{
   var edges = reportData.interaction_edges || [];
+  var robust = reportData.robust_interaction_edges || [];
   var comention = reportData.comention_edges || [];
-  var html = '<h4>Interaction (направленная)</h4><table class="display"><thead><tr><th>src</th><th>dst</th><th>type</th><th>count</th><th>Пример 1</th></tr></thead><tbody>';
+  var comentionNpmi = reportData.comention_npmi_edges || [];
+  var nodeMetrics = reportData.interaction_node_metrics || [];
+  var nodeMetricsRobust = reportData.interaction_node_metrics_robust || [];
+  var graphMetrics = reportData.interaction_graph_metrics || {{}};
+  var graphMetricsRobust = reportData.interaction_graph_metrics_robust || {{}};
+  var windowSensitivity = reportData.comention_window_sensitivity || {{}};
+  var edgeStability = reportData.interaction_edge_stability || [];
+  var confStats = {{ high: 0, medium: 0, low: 0, unknown: 0 }};
   edges.forEach(function(e) {{
-    html += '<tr><td>' + (e.src||'') + '</td><td>' + (e.dst||'') + '</td><td>' + (e.type||'') + '</td><td>' + (e.count||0) + '</td><td>' + (e.example_1||'').substring(0, 120) + '…</td></tr>';
+    var c = (e.confidence || '').toLowerCase();
+    if (c === 'high' || c === 'medium' || c === 'low') confStats[c] += 1;
+    else confStats.unknown += 1;
   }});
-  html += '</tbody></table><h4>Co-mention (первые 100 рёбер)</h4><table class="display"><thead><tr><th>Этнос 1</th><th>Этнос 2</th><th>Вес</th></tr></thead><tbody>';
+  var html = '<h4>Interaction (направленная)</h4>';
+  html += '<p class="method-note"><strong>Качество извлечения рёбер:</strong> high=' + confStats.high + ', medium=' + confStats.medium + ', low=' + confStats.low + (confStats.unknown ? (', unknown=' + confStats.unknown) : '') + '. Для аналитических выводов в первую очередь используйте high/medium.</p>';
+  html += '<table class="display"><thead><tr><th>src</th><th>dst</th><th>type</th><th>count</th><th>confidence</th><th>Пример 1</th></tr></thead><tbody>';
+  edges.forEach(function(e) {{
+    html += '<tr><td>' + (e.src||'') + '</td><td>' + (e.dst||'') + '</td><td>' + (e.type||'') + '</td><td>' + (e.count||0) + '</td><td>' + (e.confidence||'') + '</td><td>' + (e.example_1||'').substring(0, 120) + '…</td></tr>';
+  }});
+  html += '</tbody></table>';
+  html += '<h4>Robust interaction edges (high/medium confidence, count>=2)</h4><table class="display"><thead><tr><th>src</th><th>dst</th><th>type</th><th>count</th><th>confidence</th><th>Пример 1</th></tr></thead><tbody>';
+  robust.slice(0, 100).forEach(function(e) {{
+    html += '<tr><td>' + (e.src||'') + '</td><td>' + (e.dst||'') + '</td><td>' + (e.type||'') + '</td><td>' + (e.count||0) + '</td><td>' + (e.confidence||'') + '</td><td>' + ((e.examples && e.examples[0]) ? String(e.examples[0]).substring(0, 120) + '…' : '') + '</td></tr>';
+  }});
+  html += '</tbody></table>';
+  html += '<h4>Graph metrics</h4>';
+  html += '<table class="display"><thead><tr><th>Метрика</th><th>Interaction all</th><th>Interaction robust</th></tr></thead><tbody>';
+  ['n_nodes','n_edges','density','reciprocity','avg_weighted_degree'].forEach(function(k) {{
+    html += '<tr><td>' + k + '</td><td>' + (graphMetrics[k] != null ? graphMetrics[k] : '') + '</td><td>' + (graphMetricsRobust[k] != null ? graphMetricsRobust[k] : '') + '</td></tr>';
+  }});
+  html += '</tbody></table>';
+  html += '<h4>Node metrics (top-50 by weighted degree)</h4><table class="display"><thead><tr><th>node</th><th>in_degree_w</th><th>out_degree_w</th><th>degree_w</th><th>agency_balance</th><th>betweenness</th><th>pagerank</th></tr></thead><tbody>';
+  nodeMetrics.slice(0, 50).forEach(function(r) {{
+    html += '<tr><td>' + (r.node||'') + '</td><td>' + (r.in_degree_w!=null ? r.in_degree_w : '') + '</td><td>' + (r.out_degree_w!=null ? r.out_degree_w : '') + '</td><td>' + (r.degree_w!=null ? r.degree_w : '') + '</td><td>' + (r.agency_balance!=null ? r.agency_balance : '') + '</td><td>' + (r.betweenness!=null ? r.betweenness : '') + '</td><td>' + (r.pagerank!=null ? r.pagerank : '') + '</td></tr>';
+  }});
+  html += '</tbody></table>';
+  html += '<h4>Node metrics robust (top-50 by weighted degree)</h4><table class="display"><thead><tr><th>node</th><th>in_degree_w</th><th>out_degree_w</th><th>degree_w</th><th>agency_balance</th><th>betweenness</th><th>pagerank</th></tr></thead><tbody>';
+  nodeMetricsRobust.slice(0, 50).forEach(function(r) {{
+    html += '<tr><td>' + (r.node||'') + '</td><td>' + (r.in_degree_w!=null ? r.in_degree_w : '') + '</td><td>' + (r.out_degree_w!=null ? r.out_degree_w : '') + '</td><td>' + (r.degree_w!=null ? r.degree_w : '') + '</td><td>' + (r.agency_balance!=null ? r.agency_balance : '') + '</td><td>' + (r.betweenness!=null ? r.betweenness : '') + '</td><td>' + (r.pagerank!=null ? r.pagerank : '') + '</td></tr>';
+  }});
+  html += '</tbody></table>';
+  html += '<h4>Co-mention (первые 100 рёбер)</h4><table class="display"><thead><tr><th>Этнос 1</th><th>Этнос 2</th><th>Вес</th></tr></thead><tbody>';
   comention.slice(0, 100).forEach(function(e) {{
     html += '<tr><td>' + (e.a||'') + '</td><td>' + (e.b||'') + '</td><td>' + (e.weight||0) + '</td></tr>';
   }});
   html += '</tbody></table>';
+  html += '<h4>Co-mention NPMI (топ-100, ассоциативная сила)</h4><table class="display"><thead><tr><th>Этнос 1</th><th>Этнос 2</th><th>NPMI</th></tr></thead><tbody>';
+  comentionNpmi
+    .slice()
+    .sort(function(a,b) {{ return (b.npmi||0) - (a.npmi||0); }})
+    .slice(0, 100)
+    .forEach(function(e) {{
+      html += '<tr><td>' + (e.a||'') + '</td><td>' + (e.b||'') + '</td><td>' + (e.npmi != null ? e.npmi : '') + '</td></tr>';
+    }});
+  html += '</tbody></table>';
+  var sens = windowSensitivity.summary || [];
+  if (sens.length) {{
+    html += '<h4>Co-mention window sensitivity (±1/±2/±3)</h4><table class="display"><thead><tr><th>window</th><th>n_edges</th><th>top-k overlap with w2</th><th>overlap ratio</th></tr></thead><tbody>';
+    sens.forEach(function(r) {{
+      html += '<tr><td>' + (r.window != null ? ('±' + r.window) : '') + '</td><td>' + (r.n_edges != null ? r.n_edges : '') + '</td><td>' + (r.topk_overlap_with_w2 != null ? r.topk_overlap_with_w2 : '') + '</td><td>' + (r.topk_overlap_ratio_with_w2 != null ? r.topk_overlap_ratio_with_w2 : '') + '</td></tr>';
+    }});
+    html += '</tbody></table>';
+  }}
+  if (edgeStability.length) {{
+    html += '<h4>Bootstrap stability (top robust edges)</h4><table class="display"><thead><tr><th>src</th><th>dst</th><th>type</th><th>count</th><th>confidence</th><th>stability</th><th>bootstrap_n</th></tr></thead><tbody>';
+    edgeStability.slice(0, 50).forEach(function(r) {{
+      html += '<tr><td>' + (r.src||'') + '</td><td>' + (r.dst||'') + '</td><td>' + (r.type||'') + '</td><td>' + (r.count != null ? r.count : '') + '</td><td>' + (r.confidence||'') + '</td><td>' + (r.stability != null ? r.stability : '') + '</td><td>' + (r.bootstrap_n != null ? r.bootstrap_n : '') + '</td></tr>';
+    }});
+    html += '</tbody></table>';
+  }}
   document.getElementById('networks-wrap').innerHTML = html;
   if ($.fn.DataTable) {{
     $('#networks-wrap table.display').each(function() {{

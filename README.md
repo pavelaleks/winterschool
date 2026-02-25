@@ -33,6 +33,20 @@ python main.py --from-db
 
 ---
 
+## Режимы scientific report (LLM)
+
+| Режим | Команда | Скорость/стоимость | Качество scientific_report |
+|------|---------|--------------------|----------------------------|
+| Один вызов (базовый) | `python main.py --run-llm` | Быстрее, дешевле | Хороший общий текст, но возможна поверхностность отдельных секций |
+| Поэтапный (staged) | `python main.py --run-llm --scientific-report-staged` | Медленнее, дороже (несколько LLM-вызовов) | Обычно глубже и аккуратнее по секциям (corpus/distributions, keyness/essentialization, networks/indices, profiles/conclusion) |
+| Полный прогон + staged scientific report | `python main.py --full --run-llm --scientific-report-staged` | Самый долгий и дорогой режим | Максимально полный набор артефактов + более глубокий scientific_report по секциям |
+| Только scientific report из готовых данных | `python main.py --scientific-report-only --run-llm` | Быстро (без полного пересчёта пайплайна) | Обновляет только scientific report по текущим данным из `pipeline.db` и `output/derived` |
+| Только scientific report, staged | `python main.py --scientific-report-only --run-llm --scientific-report-staged` | Чуть дольше, но без полного прогона | Лучший баланс для доработки текста перед публикацией |
+
+**Когда использовать staged:** перед «почти финальной» версией отчёта/статьи, когда важна глубина интерпретации и согласованность секций больше, чем экономия токенов.
+
+---
+
 ## Содержание
 
 1. [Описание проекта](#1-описание-проекта)
